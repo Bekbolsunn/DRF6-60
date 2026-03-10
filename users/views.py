@@ -18,6 +18,7 @@ import string
 
 from users import serializers
 from rest_framework_simplejwt.views import TokenObtainPairView
+from users.tasks import add, send_otp_email
 
 class CustomTokenObtainPairView(TokenObtainPairView):
     serializer_class = serializers.CustomTokenObtainPairSerializer
@@ -52,6 +53,7 @@ class RegistrationAPIView(CreateAPIView):
     serializer_class = RegisterValidateSerializer
 
     def post(self, request, *args, **kwargs):
+        add.delay(2, 2)
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
@@ -73,6 +75,8 @@ class RegistrationAPIView(CreateAPIView):
                 user=user,
                 code=code
             )
+
+        send_otp_email.delay(email, code)
 
         return Response(
             status=status.HTTP_201_CREATED,
